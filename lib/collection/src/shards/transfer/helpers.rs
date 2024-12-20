@@ -275,9 +275,7 @@ pub fn suggest_peer_to_remove_replica(
         .collect();
 
     candidates.sort_unstable_by(|(_, status1, count1), (_, status2, count2)| {
-        // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
-        //
-        // I'm not really sure what's going on here... 😬
+        // TODO: Handle `ReplicaState::ReshardingScaleDown`!? I'm not really sure what's going on here... 😬
         match (status1, status2) {
             (ReplicaState::Active, ReplicaState::Active) => count2.cmp(count1),
             (ReplicaState::Active, _) => Ordering::Less,

@@ -417,8 +417,13 @@ impl Collection {
         }
 
         // 3. Do not deactivate the last active replica
-        // TODO: Should we consider `ReshardingScaleDown` to be `Active`, when deactivating last `Active` replica?
-        if state != ReplicaState::Active && replica_set.is_last_active_replica(peer_id) {
+        //
+        // TODO: Should we consider `ReshardingScaleDown` state, when counting active replicas?
+        //
+        // `state != ReplicaState::Active` check should *not* matter in this case, because we only
+        // switch replicas into `ReshardingScaleDown` when starting resharding transfer, but never
+        // with `SetReplicaState` consensus operation?..
+        if replica_set.is_last_active_replica(peer_id) && state != ReplicaState::Active {
             return Err(CollectionError::bad_input(format!(
                 "Cannot deactivate the last active replica {peer_id} of shard {shard_id}"
             )));
@@ -697,6 +702,7 @@ impl Collection {
                 });
 
             // Try to find a replica to transfer from
+            // TODO: Should we consider `ReshardingScaleDown` state, when counting active replicas?
             for replica_id in replica_set.active_remote_shards() {
                 let transfer = ShardTransfer {
                     from: replica_id,

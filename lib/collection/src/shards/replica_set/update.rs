@@ -418,7 +418,8 @@ impl ShardReplicaSet {
 
                                     // Wait for replica deactivation.
                                     // This should include `ReshardingScaleDown` state.
-                                    // And maybe `Resharding` as well? 🤔
+                                    //
+                                    // TODO: And maybe `Resharding` as well? 🤔
                                     let is_active = matches!(
                                         state.peers.get(peer_id),
                                         Some(

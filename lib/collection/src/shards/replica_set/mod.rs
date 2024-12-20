@@ -331,6 +331,7 @@ impl ShardReplicaSet {
             clock_set: Default::default(),
         };
 
+        // TODO: Should we consider `ReshardingScaleDown` state, when counting active replicas?
         if local_load_failure && replica_set.active_remote_shards().is_empty() {
             replica_set
                 .locally_disabled_peers
@@ -369,7 +370,7 @@ impl ShardReplicaSet {
     }
 
     pub fn is_last_active_replica(&self, peer_id: PeerId) -> bool {
-        // TODO: Should `active_peers` include `ReshardingScaleDown` replicas?
+        // TODO: Should we consider `ReshardingScaleDown` state, when counting active replicas?
         let active_peers = self.replica_state.read().active_peers();
         active_peers.len() == 1 && active_peers.contains(&peer_id)
     }
@@ -382,6 +383,7 @@ impl ShardReplicaSet {
     pub fn active_shards(&self) -> Vec<PeerId> {
         let replica_state = self.replica_state.read();
         replica_state
+            // This is a part of deprecated built-in resharding implementaiton, so we don't care
             .active_peers()
             .into_iter()
             .filter(|&peer_id| !self.is_locally_disabled(peer_id))
@@ -393,6 +395,7 @@ impl ShardReplicaSet {
         let replica_state = self.replica_state.read();
         let this_peer_id = replica_state.this_peer_id;
         replica_state
+            // TODO: Should we consider `ReshardingScaleDown` state, when counting active replicas?
             .active_peers()
             .into_iter()
             .filter(|&peer_id| !self.is_locally_disabled(peer_id) && peer_id != this_peer_id)
@@ -1098,9 +1101,7 @@ impl ReplicaSetState {
         self.peers
             .iter()
             .filter_map(|(peer_id, state)| {
-                // TODO: Should `active_peers` include `ReshardingScaleDown` replicas?
-                //
-                // This is used in a few different places and very hard to analyze... 😭
+                // TODO: Should "active peers" include `ReshardingScaleDown` replicas?
                 matches!(state, ReplicaState::Active).then_some(*peer_id)
             })
             .collect()
