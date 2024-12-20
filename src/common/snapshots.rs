@@ -237,8 +237,17 @@ pub async fn recover_shard_snapshot_impl(
         .replicas
         .iter()
         .map(|(&peer, &state)| (peer, state))
-        // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
-        .filter(|&(peer, state)| peer != toc.this_peer_id && state == ReplicaState::Active)
+        .filter(|&(peer, state)| {
+            // Check if there are *other* active replicas, after recovering shard snapshot.
+            // This should include `ReshardingScaleDown` replicas.
+
+            let is_active = matches!(
+                state,
+                ReplicaState::Active | ReplicaState::ReshardingScaleDown
+            );
+
+            peer != toc.this_peer_id && is_active
+        })
         .collect();
 
     if other_active_replicas.is_empty() {

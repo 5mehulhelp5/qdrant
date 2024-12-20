@@ -111,7 +111,10 @@ pub fn validate_transfer(
         )));
     }
 
-    // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
+    // TODO: Allow shard transfers from shards in `ReshardingScaleDown` state!?
+    //
+    // It *should* be safe/correct, and *should* handle corner cases, when all-but-one replicas are
+    // already in `ReshardingScaleDown` state, and the last `Active` replica is marked as `Dead`...
     if shard_state.get(&transfer.from) != Some(&ReplicaState::Active) {
         return Err(CollectionError::bad_request(format!(
             "Shard {} is not active on peer {}",

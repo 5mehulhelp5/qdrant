@@ -899,8 +899,14 @@ impl ShardReplicaSet {
     /// Check whether a peer is registered as `active`.
     /// Unknown peers are not active.
     fn peer_is_active(&self, peer_id: PeerId) -> bool {
-        // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
-        self.peer_state(peer_id) == Some(ReplicaState::Active) && !self.is_locally_disabled(peer_id)
+        // This is used *exclusively* during `execute_*_read_operation`, and so it *should* consider
+        // `ReshardingScaleDown` replicas
+        let is_active = matches!(
+            self.peer_state(peer_id),
+            Some(ReplicaState::Active | ReplicaState::ReshardingScaleDown)
+        );
+
+        is_active && !self.is_locally_disabled(peer_id)
     }
 
     fn peer_is_active_or_resharding(&self, peer_id: PeerId) -> bool {
@@ -1091,7 +1097,7 @@ impl ReplicaSetState {
         self.peers
             .iter()
             .filter_map(|(peer_id, state)| {
-                // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
+                // TODO: Used in a bunch of different places and super difficult to analyze... 😭
                 matches!(state, ReplicaState::Active).then_some(*peer_id)
             })
             .collect()

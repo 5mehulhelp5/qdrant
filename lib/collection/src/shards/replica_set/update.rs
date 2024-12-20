@@ -415,8 +415,19 @@ impl ShardReplicaSet {
                             |state| {
                                 peer_ids.iter().all(|peer_id| {
                                     // Not found means that peer is dead
-                                    // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
-                                    state.peers.get(peer_id) != Some(&ReplicaState::Active)
+
+                                    // Wait for replica deactivation.
+                                    // This should include `ReshardingScaleDown` state.
+                                    // And maybe `Resharding` as well? 🤔
+                                    let is_active = matches!(
+                                        state.peers.get(peer_id),
+                                        Some(
+                                            ReplicaState::Active
+                                                | ReplicaState::ReshardingScaleDown
+                                        )
+                                    );
+
+                                    !is_active
                                 })
                             },
                             timeout,

@@ -640,8 +640,6 @@ impl Collection {
 
             let peers = replica_set.peers();
             let this_peer_state = peers.get(&this_peer_id).copied();
-            // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
-            let is_last_active = peers.values().filter(|state| **state == Active).count() == 1;
 
             if this_peer_state == Some(Initializing) {
                 // It is possible, that collection creation didn't report
@@ -650,8 +648,12 @@ impl Collection {
                 continue;
             }
 
+            // TODO: Is it safe to change node type during resharding!?
             if self.shared_storage_config.node_type == NodeType::Listener {
-                // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
+                // TODO: We could relax this check to also count `ReshardingScaleDown` replicas...
+                let is_last_active = peers.values().filter(|&&state| state == Active).count() == 1;
+
+                // TODO: ...but this check should stay `Active`-only
                 if this_peer_state == Some(Active) && !is_last_active {
                     // Convert active node from active to listener
                     on_convert_to_listener(this_peer_id, shard_id);
