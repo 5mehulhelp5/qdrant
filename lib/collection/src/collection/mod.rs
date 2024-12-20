@@ -417,7 +417,7 @@ impl Collection {
         }
 
         // 3. Do not deactivate the last active replica
-        // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
+        // TODO: Should we consider `ReshardingScaleDown` to be `Active`, when deactivating last `Active` replica?
         if state != ReplicaState::Active && replica_set.is_last_active_replica(peer_id) {
             return Err(CollectionError::bad_input(format!(
                 "Cannot deactivate the last active replica {peer_id} of shard {shard_id}"
@@ -483,7 +483,7 @@ impl Collection {
                 if shard_info
                     .replicas
                     .into_iter()
-                    // TODO: Handle `ReplicaState::ReshardingScaleDown`!?
+                    // TODO: Should we consider `ReshardingScaleDown` to be `Active`, when probing `/readyz`?
                     .any(|(_peer_id, state)| state != ReplicaState::Active)
                 {
                     is_fully_active = false;

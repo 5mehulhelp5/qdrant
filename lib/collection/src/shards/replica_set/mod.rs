@@ -369,6 +369,7 @@ impl ShardReplicaSet {
     }
 
     pub fn is_last_active_replica(&self, peer_id: PeerId) -> bool {
+        // TODO: Should `active_peers` include `ReshardingScaleDown` replicas?
         let active_peers = self.replica_state.read().active_peers();
         active_peers.len() == 1 && active_peers.contains(&peer_id)
     }
@@ -1097,7 +1098,9 @@ impl ReplicaSetState {
         self.peers
             .iter()
             .filter_map(|(peer_id, state)| {
-                // TODO: Used in a bunch of different places and super difficult to analyze... 😭
+                // TODO: Should `active_peers` include `ReshardingScaleDown` replicas?
+                //
+                // This is used in a few different places and very hard to analyze... 😭
                 matches!(state, ReplicaState::Active).then_some(*peer_id)
             })
             .collect()
